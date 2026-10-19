@@ -30,6 +30,10 @@ author:
   city: BeiJing
   country: China
   email: suli@chinamobile.com
+- name: Peter Chunchi Liu
+  org: Huawei
+  country: China
+  email: liuchunchi@huawei.com
 
 normative:
   RFC2119:
@@ -58,36 +62,36 @@ In the scenario of AI agent authorization, how to ensure that a user's high-leve
 
 Traditional OAuth 2.0 [RFC6749] relies on a pre-defined set of `scope` values that a user consents to. This model works well when the requested permissions are simple and easily understood by the user (e.g., "read your profile," "access your calendar").
 
-However, modern applications, especially those driven by AI and agents, operate based on high-level user goals, not low-level API permissions. A user might command an agent: "Plan my business trip to the IETF meeting in Singapore next month."
+However, modern applications, especially those driven by AI and agents, operate based on high-level user goals, not low-level API permissions. A user might command an agent: "Plan my business trip to the IETF meeting in Singapore next month." Such natural language instructions need to be interpreted by AI agents, which then determine the specific resource requests required to complete the task.
 
-To fulfill this, the agent might need to:
+For example, to fulfill the abovementioned task, the agent might need to:
 *   Read the user's calendar to check for conflicts (`calendar.read`).
 *   Access the user's contacts to find travel companions (`contacts.read`).
 *   Search for flights and hotels (`flight.search`, `hotel.search`).
 *   Book the chosen options using a stored payment method (`payment.execute`).
 
-The core problem is the **semantic gap**: the user approves a high-level *intent*, but the system must translate this into a set of low-level *permissions*. If this translation happens unchecked on the client side, it creates a major security risk. A malicious or buggy client could request far more permissions than the intent strictly requires, and the user would have no way of knowing. This breaks the principle of least privilege.
+The core problem is the **semantic gap**: the user approves a high-level *intent*, but the system must translate this into a set of low-level *permissions*. If this translation happens unchecked on the client side, it creates a major security risk. A malicious or buggy client could request far more permissions than the intent strictly requires, and the user would have no way of knowing. This breaks the principle of least privilege. Therefore, authorizing the user's original intent—even if it contains a certain degree of vagueness (such as natural language)—helps verify whether the agent's subsequent resource requests align with that intent, thereby preventing 'intent drift.
 
 ## 1.2. Core Concept: Separating Grant from Execution
 
-The core value of the Intent Token lies in its introduction of a clear, two-stage model for AI agent-driven authorization, which resolves the "semantic gap" between high-level user intent and low-level system permissions. This model aligns closely with the conceptual framework proposed in `draft-chen-oauth-agent-authz-use-cases`, which can be understood as the separation of a **Grant Layer** and an **Execution Layer**.
+The core value of the Intent Token lies in its introduction of a two-stage model for AI agent-driven authorization, which resolves the "semantic gap" between high-level user intent and specific resource access permissions. This model aligns closely with the conceptual framework proposed in `draft-chen-oauth-agent-authz-use-cases`, which can be understood as the separation of a **Semantic Authorization Stage** and an **Resource Authorization Stage**.
 
-1.  **Grant Layer: Establishing Authority (Grant Layer Authority)**
+1.  **Semantic Authorization Stage: Establishing Task Intent Baseline**
     *   **User Action**: A user expresses a high-level, business-oriented intent to an AI agent via natural language (e.g., "Help me plan a trip to Paris").
     *   **Core Artifact**: This act of authorization by the user no longer results in the direct issuance of a broad, static set of `scope`s. Instead, it is captured and solidified into a verifiable, signed digital object—the **Intent Token**.
-    *   **Conceptual Alignment**: This Intent Token is the concrete manifestation of the **"Grant Layer Authority"** that the user bestows upon the agent. It represents the authoritative proof that the user "consents to the agent acting to achieve this goal," but it is not, in itself, the final access permission.
+    *   **Conceptual Alignment**: This Intent Token is the concrete manifestation of the **"Semantic Authorization Intent"** that the user bestows upon the agent. It represents the authoritative proof that the user "consents to the agent acting to achieve this goal,". While it helps agents determine required resources and allows the AS to verify approvals, it is not the final access permission itself.
 
-2.  **Execution Layer: Providing Evidence (Execution Layer Evidence)**
+2.  **Resource Authorization Stage: Executing the Intent**
     *   **Agent Action**: When the AI agent, based on its planning (e.g., it first needs to search for flights), determines that a specific operational permission is required (e.g., `scope=flights:search`), it makes a request to the Authorization Server.
     *   **Core Mechanism**: In this request, the AI agent MUST present the **Intent Token** it previously obtained.
-    *   **Conceptual Alignment**: At this point, the role of the Intent Token transforms into **"Execution Layer Evidence"**. It proves to the Authorization Server that the currently requested, specific, low-level `scope` (`flights:search`) is a reasonable and necessary step toward fulfilling the user's original, high-level intent ("plan a trip to Paris").
+    *   **Conceptual Alignment**: At this point, the role of the Intent Token transforms into **"Execution Reference"**. It proves to the Authorization Server that the currently requested, specific, low-level `scope` (`flights:search`) conforms to the user's original, high-level intent ("plan a trip to Paris").
 
 In this way, the Intent Token becomes the critical bridge connecting these two layers:
 
-*   It is created at the **Grant Layer** as the carrier of the user's authoritative intent.
-*   It is used at the **Execution Layer** as indispensable evidence for converting that intent into concrete operational permissions.
+*   It is created at the **Semantic Authorization Stage** as the carrier of the user's intent authorization, assuring immutability.
+*   It is used at the **Resource Authorization Stage** as indispensable reference for converting that intent into concrete resource permissions, avoiding intent drift.
 
-This separation ensures that authorization decisions are no longer a one-time, vague, "all-or-nothing" process. Instead, the Authorization Server can, at each point a specific permission is needed, make a **Just-in-Time**, **Fine-Grained**, and **Secure** decision based on the user's original, immutable intent context provided by the Intent Token. This is the core security strategy for addressing the dynamic and unpredictable behavior patterns of AI agents.
+This separation ensures that authorization decisions are no longer a one-time, vague, "all-or-nothing" process. Instead, the Authorization Server can, at each point a specific permission is needed, make a **Just-in-Time**, **Fine-Grained**, and **Secure** decision based on the user's original, immutable intent context provided by the Intent Token. This proposed extension stabilizes the overarching information flow while preserving the flexible selection of agents, thereby balancing the containment of unpredictable agent behaviors with the maximization of their autonomous planning potential.
 
 ## 1.3. Requirements Language
 
@@ -96,7 +100,7 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 # 2. Terminology
 
 **Intent**
-: A string representing a high-level goal or objective that a user wishes to accomplish. This is typically captured from the user's natural language input.
+: A string representing a high-level goal or objective that a user wishes to accomplish. This is typically captured from the user's natural language input or other user-endorsed information.
 
 **Intent Token**
 : A security token (e.g., a JWT) that contains the user's intent and associated authorization constraints. It is signed by a trusted entity and serves as a verifiable record of the user's consent to that intent.
