@@ -72,6 +72,8 @@ For example, to fulfill the abovementioned task, the agent might need to:
 
 The core problem is the **semantic gap**: the user approves a high-level *intent*, but the system must translate this into a set of low-level *permissions*. If this translation happens unchecked on the client side, it creates a major security risk. A malicious or buggy client could request far more permissions than the intent strictly requires, and the user would have no way of knowing. This breaks the principle of least privilege. Therefore, authorizing the user's original intent—even if it contains a certain degree of vagueness (such as natural language)—helps verify whether the agent's subsequent resource requests align with that intent, thereby preventing 'intent drift.
 
+It is critical to understand the scope of the cryptographic guarantee provided by the Intent Token's signature. The signature provides a verifiable and non-repudiable proof of the user's original instruction. It does not, however, prove that a client's subsequent interpretation of that instruction is correct. Instead, its purpose is to enable **informed adjudication** by the Authorization Server, which can compare the client's specific request against the user's verified intent.
+
 ## 1.2. Core Concept: Separating Grant from Execution
 
 The core value of the Intent Token lies in its introduction of a two-stage model for AI agent-driven authorization, which resolves the "semantic gap" between high-level user intent and specific resource access permissions. This model aligns closely with the conceptual framework proposed in `draft-chen-oauth-agent-authz-use-cases`, which can be understood as the separation of a **Semantic Authorization Stage** and an **Resource Authorization Stage**.
@@ -104,7 +106,15 @@ Crucially, the signature does not prove that a client's subsequent interpretatio
 *   
 This model allows the Authorization Server to make an informed decision about the client's proposed action, ensuring that the subsequent issuance of access tokens remains securely tethered to the user's original, verified intent.
 
-## 1.4. Requirements Language
+## 1.4. Distinction from Rich Authorization Requests (RAR) 
+
+While the Intent Token may leverage structures defined by Rich Authorization Requests (RAR, {{RFC9396}}), its architectural role is fundamentally different.
+
+RAR is designed to structure the **"ask"** within a single, synchronous authorization grant. A client uses it to request a rich set of permissions, and if approved, typically receives an immediately usable access token.
+
+The Intent Token, in contrast, represents a long-lived, delegated **"mission"** designed for asynchronous operations. It decouples the moment of user consent from the multiple, future moments of resource access. An agent can hold this token and use it later—when the user is offline—to request specific, just-in-time access tokens under the authority of the original intent.
+
+## 1.5. Requirements Language
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in BCP 14 {{RFC2119}} {{RFC8174}}.
 
