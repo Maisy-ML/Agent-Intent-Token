@@ -162,7 +162,7 @@ An Intent Token contains the following claims:
 
 In addition to the standard JWT claims, the Intent Token defines two new claims:
 
-*   **intent_id**: RECOMMENDED. A stable and unique identifier for the user's intent. This identifier can be used to correlate multiple token exchange requests that are all part of fulfilling the same high-level intent, which is useful for auditing and logging.
+*   **intent_id**: RECOMMENDED. A stable and unique identifier for the user's intent. This identifier can be used to correlate multiple token exchange requests that are all part of fulfilling the same high-level intent. Beyond simple auditing, this identifier is critical for enabling stateful security analysis by the Authorization Server, allowing it to correlate multiple requests and detect patterns of behavior over time.
 
 *   **intent**: REQUIRED. A JSON object that represents the user's delegated intent. The structure and semantics of this object are determined by the policies of the issuer and the Authorization Server. It serves as the canonical, auditable record of the user's goal.
 
@@ -178,7 +178,17 @@ TBD
 
 # 5. Security Considerations
 
-TBD
+## 5.1. Cumulative Intent Drift
+
+A significant risk in agent-based systems is "Cumulative Intent Drift". This occurs when a sequence of individually justifiable actions, when viewed in aggregate, deviates from the user's original high-level intent. An Authorization Server that evaluates each request in isolation may be blind to this drift, as no single request appears malicious on its own.
+
+For example, for an intent of "Help me book a cheap trip to Singapore", an agent might make several requests:
+1.  Request `calendar.read` to check schedules (Reasonable).
+2.  Request `flight.search` (Core to the intent).
+3.  Request `hotel.search` for luxury suites (Diverges from "cheap").
+4.  Request `contacts.read` to find colleagues (Potential overreach).
+
+To mitigate this risk, Authorization Servers SHOULD treat the authorization process as stateful. The `intent_id` claim is the essential mechanism for this. The AS SHOULD use the `intent_id` as a correlation key to maintain a history of actions and scopes granted under a single user intent. By performing this sequential analysis, the AS can evaluate new requests in the context of what has already been approved, allowing it to detect anomalous patterns such as privilege escalation or contradiction of the original intent's constraints.
 
 # IANA Considerations
 
@@ -186,8 +196,8 @@ This document has no IANA actions.
 
 # Acknowledgements
 
-The analysis and use cases in this document are derived from observations of emerging AI agent technologies and their application trends across various industries. Thanks are due to the OAuth community for their past and ongoing efforts in building a secure and interoperable authorization framework, upon which this work is built.
+The inspiration for the "Intent Token" came from addressing gap 3.1 "authorization context gap" in the Use case and gap analysis. 
 
-The authors would like to thank Blake Morrison, Mohamad Khalil Yossif, niyuan, Dick Hardt, Michael Jones, Christopher Emerson, morganLR, Eric Leleu, Thi Nguyen-Huu, Jeff, Laxmikant and Iman for commenting, contributing and providing feedback on this draft.
+The authors would like to thank Steve Tout, Karl McGuinness, and M.Thumilan for commenting, contributing and providing feedback on this draft.
 
 --- back
