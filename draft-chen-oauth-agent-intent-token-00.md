@@ -6,7 +6,7 @@ submissiontype: IETF
 area: Security
 wg: OAuth Working Group
 
-docname: draft-chen-oauth-agent-intent-token-00
+docname: draft-chen-oauth-agent-intent-token-01
 
 title: The Intent Token - A Credential for Delegated User Intent
 abbrev: Intent Token
@@ -93,7 +93,18 @@ In this way, the Intent Token becomes the critical bridge connecting these two l
 
 This separation ensures that authorization decisions are no longer a one-time, vague, "all-or-nothing" process. Instead, the Authorization Server can, at each point a specific permission is needed, make a **Just-in-Time**, **Fine-Grained**, and **Secure** decision based on the user's original, immutable intent context provided by the Intent Token. This proposed extension stabilizes the overarching information flow while preserving the flexible selection of agents, thereby balancing the containment of unpredictable agent behaviors with the maximization of their autonomous planning potential.
 
-## 1.3. Requirements Language
+## 1.3. Authenticating Intent vs. Approving Authority
+
+A critical design principle of the Intent Token is the precise scope of its cryptographic guarantee. The digital signature provides a verifiable and non-repudiable link between the user (sub), the high-level instruction (the intent claim), and the time of approval (iat). It attests to the authenticity and integrity of the original instruction as approved by the user.
+
+Crucially, the signature does not prove that a client's subsequent interpretation of this intent is correct or appropriate. It does not grant the client the authority to be the trusted interpreter of the user's goal. Instead, the Intent Token facilitates a "separation of concerns" in the trust model:
+
+*   The Client (e.g., an AI Agent) acts as a proposer, interpreting the intent and requesting a specific, narrowly-scoped access token to perform a concrete action.
+*   The Authorization Server acts as the trusted adjudicator. It receives the signed Intent Token as immutable evidence of the user's original goal. It is the AS's responsibility to inspect this authentic instruction and determine, based on its own policies, whether the client's requested permissions represent a faithful and safe interpretation.
+*   
+This model allows the Authorization Server to make an informed decision about the client's proposed action, ensuring that the subsequent issuance of access tokens remains securely tethered to the user's original, verified intent.
+
+## 1.4. Requirements Language
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in BCP 14 {{RFC2119}} {{RFC8174}}.
 
